@@ -93,17 +93,6 @@
 }
 
 #pragma mark Init Methods
-
-- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
-{
-    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
-    if (self) {
-        
-    }
-    return self;
-}
-
-
 /*
  * Init Method to load the view from a nib with an array of files
  */
@@ -130,7 +119,6 @@
   //  DLog(@"self.fileIdToShowFiles: %ld", (long)_fileIdToShowFiles.idFile);
     
     _showLoadingAfterChangeUser = NO;
-    _checkingEtag = NO;
     ((CheckAccessToServer *)[CheckAccessToServer sharedManager]).delegate = self;
     
     //We check if the user have root folder at true on the DB
@@ -266,14 +254,10 @@
     
     self.willLayoutSubviews = true;
     
-    if (IS_IOS8 || IS_IOS9) {
-        self.edgesForExtendedLayout = UIRectEdgeAll;
-        self.extendedLayoutIncludesOpaqueBars = true;
-        self.automaticallyAdjustsScrollViewInsets = true;
-    }else{
-        self.edgesForExtendedLayout = UIRectEdgeAll;
-    }
-    
+    self.edgesForExtendedLayout = UIRectEdgeAll;
+    self.extendedLayoutIncludesOpaqueBars = true;
+    self.automaticallyAdjustsScrollViewInsets = true;
+
     //Flag to know when the view change automatic to root view
     BOOL isGoToRootView = NO;
     
@@ -362,7 +346,6 @@
     _mUser = currentUser;
     
     if(_isEtagRequestNecessary && isGoToRootView==NO) {
-        _checkingEtag = YES;
         
         //Refresh the shared data
         [self refreshSharedPath];
@@ -547,7 +530,6 @@
 {
     [super viewDidUnload];
     // Release any retained subviews of the main view.
-
 }
 
 
@@ -555,24 +537,22 @@
 {
      [super viewDidLayoutSubviews];
     
-    if (IS_IOS8 || IS_IOS9) {
-        if ([self.tableView respondsToSelector:@selector(setSeparatorInset:)]) {
-            [self.tableView setSeparatorInset:UIEdgeInsetsMake(0, 10, 0, 0)];
-        }
-        
-        if ([self.tableView respondsToSelector:@selector(setLayoutMargins:)]) {
-            [self.tableView setLayoutMargins:UIEdgeInsetsZero];
-        }
-        
-        
-        CGRect rect = self.navigationController.navigationBar.frame;
-        float y = rect.size.height + rect.origin.y;
-        self.tableView.contentInset = UIEdgeInsetsMake(y,0,0,0);
-        
-        if (self.didLayoutSubviews == false){
-            self.didLayoutSubviews = true;
-            [self viewDidAppear:true];
-        }
+    if ([self.tableView respondsToSelector:@selector(setSeparatorInset:)]) {
+        [self.tableView setSeparatorInset:UIEdgeInsetsMake(0, 10, 0, 0)];
+    }
+    
+    if ([self.tableView respondsToSelector:@selector(setLayoutMargins:)]) {
+        [self.tableView setLayoutMargins:UIEdgeInsetsZero];
+    }
+    
+    
+    CGRect rect = self.navigationController.navigationBar.frame;
+    float y = rect.size.height + rect.origin.y;
+    self.tableView.contentInset = UIEdgeInsetsMake(y,0,0,0);
+    
+    if (self.didLayoutSubviews == false){
+        self.didLayoutSubviews = true;
+        [self viewDidAppear:true];
     }
 }
 
@@ -583,23 +563,16 @@
         self.willLayoutSubviews = true;
         [self viewWillAppear:true];
     }
-    
-    
-    
 }
 
 -(void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    if ([self.tableView respondsToSelector:@selector(setSeparatorInset:)]) {
+        [self.tableView setSeparatorInset:UIEdgeInsetsMake(0, 10, 0, 0)];
+    }
     
-    if (IS_IOS8 || IS_IOS9) {
-        if ([self.tableView respondsToSelector:@selector(setSeparatorInset:)]) {
-            [self.tableView setSeparatorInset:UIEdgeInsetsMake(0, 10, 0, 0)];
-        }
-        
-        if ([self.tableView respondsToSelector:@selector(setLayoutMargins:)]) {
-            [self.tableView setLayoutMargins:UIEdgeInsetsZero];
-        }
-        
+    if ([self.tableView respondsToSelector:@selector(setLayoutMargins:)]) {
+        [self.tableView setLayoutMargins:UIEdgeInsetsZero];
     }
 }
 
@@ -3324,8 +3297,6 @@
  */
 -(void)checkEtagBeforeMakeRefreshFolderRequest:(NSArray *) requestArray {
     
-    _checkingEtag = NO;
-    
    //if(req.responseStatusCode < 401) {
     
     // OCXMLParser *parser = [[OCXMLParser alloc]init];
@@ -3397,14 +3368,10 @@
  */
 - (void)showError:(NSString *) message {
     
-    if (!_checkingEtag) {
-        
-        [self performSelectorOnMainThread:@selector(showAlertView:)
+    [self performSelectorOnMainThread:@selector(showAlertView:)
                                withObject:message
                             waitUntilDone:YES];
-    } else {
-        _checkingEtag = NO;
-    }
+  
      dispatch_async(dispatch_get_main_queue(), ^{
          [_tableView deselectRowAtIndexPath:[_tableView indexPathForSelectedRow] animated:YES];
      });
@@ -3421,15 +3388,10 @@
     
     [self endLoading];
     
-    if (!_checkingEtag) {
-        [self showEditAccount];
-    }
+    [self showEditAccount];
     
-    if(!_checkingEtag) {
-        [self stopPullRefresh];
-        [self cancelDownload];
-    }
-    _checkingEtag = NO;
+    [self stopPullRefresh];
+    [self cancelDownload];
 }
 
 - (void) showEditAccount {
